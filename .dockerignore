@@ -1,0 +1,8 @@
+.git
+.gitignore
+client
+node_modules
+server/.venv
+server/jeevansync.db
+server/__pycache__
+*.pyc
