@@ -11,6 +11,10 @@ pnpm-debug.log*
 .DS_Store
 *.sqlite
 *.sqlite-journal
+server/jeevansync.db
+server/.venv/
+__pycache__/
+client/.vercel/
 coverage/
 .prisma/
 client/dist/

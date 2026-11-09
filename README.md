@@ -114,26 +114,25 @@ docker compose exec server node prisma/seed.js
 # Backend API Health: http://localhost:80/health
 ```
 
-### Option B: Running Locally with Node.js & SQLite
+### Option B: Running Locally with Python Flask & SQLite
 
 ```bash
-# 1. Install dependencies
-cd JeevanSYNC/server && npm install
-cd ../client && npm install
+# 1. Install backend dependencies
+cd JeevanSYNC/server
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-# 2. Seed database
-cd ../server
-npx prisma generate
-npx prisma db push --schema=prisma/schema.sqlite.prisma
-node prisma/seed.js
+# 2. Start the Flask API (port 5050; creates and seeds SQLite automatically)
+python app.py
 
-# 3. Start backend API server (Port 5000)
-npm run dev
-
-# 4. Start frontend Vite dev server (Port 3000)
-# (In a separate terminal)
+# 3. In a separate terminal, install and run the React frontend
 cd ../client
+npm install
 npm run dev
+
+# 4. Open the frontend
+# http://localhost:3000
 ```
 
 Visit **http://localhost:3000** in your browser.
