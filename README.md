@@ -7,6 +7,11 @@
 
 **JeevanSYNC** is a production-grade, secure, mobile-first healthcare coordination platform designed to unify emergency response, hospital operations, diagnostics, and patient care into one synchronized ecosystem.
 
+## Live Deployment
+
+- **Frontend:** [JeevanSYNC Web App](https://jeevansync.vercel.app)
+- **Backend API:** [Flask API Health Check](https://jeevansync.onrender.com/health)
+
 ---
 
 ## 1. Architecture Diagram
