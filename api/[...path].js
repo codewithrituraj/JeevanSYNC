@@ -1,6 +1,13 @@
-import app from '../server/src/app.js';
+let appPromise;
 
-// Vercel catch-all function for the existing Express API. The frontend and API
-// can therefore be deployed from this repository without requiring a second
-// hostname or a client-side proxy workaround.
-export default app;
+const getApp = () => {
+  if (!appPromise) {
+    appPromise = import('../server/src/app.js').then((module) => module.default);
+  }
+  return appPromise;
+};
+
+module.exports = async (req, res) => {
+  const app = await getApp();
+  return app(req, res);
+};
