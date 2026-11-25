@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -22,19 +22,15 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Request interceptor: attach token from localStorage if present
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('jeevansync_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle token expiration & refresh rotation
 api.interceptors.response.use(
   (response) => response.data,
   async (error) => {
@@ -54,18 +50,16 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
-
       try {
         const refreshResponse = await axios.post(
           `${api.defaults.baseURL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
-
         const newAccessToken = refreshResponse.data?.data?.accessToken;
         if (newAccessToken) {
           localStorage.setItem('jeevansync_token', newAccessToken);
-          api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           processQueue(null, newAccessToken);
           return api(originalRequest);
