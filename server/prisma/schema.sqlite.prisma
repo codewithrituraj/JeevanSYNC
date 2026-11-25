@@ -1,0 +1,323 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String?        @unique
+  phone         String         @unique
+  passwordHash  String
+  name          String
+  role          String         @default("PATIENT") // PATIENT, DOCTOR, HOSPITAL_ADMIN, RECEPTION_STAFF, SUPER_ADMIN
+  hospitalId    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  hospital      Hospital?      @relation("HospitalStaff", fields: [hospitalId], references: [id])
+  refreshTokens RefreshToken[]
+  doctorProfile Doctor?
+  appointments  Appointment[]  @relation("PatientAppointments")
+  referrals     Referral[]     @relation("PatientReferrals")
+  patientHistory PatientHistory[] @relation("PatientRecords")
+  createdRecords PatientHistory[] @relation("CreatedRecords")
+  reminders     Reminder[]
+  ambulanceRequests AmbulanceRequest[]
+  auditLogs     AuditLog[]
+  monikaConversations MonikaConversation[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([role])
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique
+  userId     String
+  revoked    Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Hospital {
+  id               String            @id @default(uuid())
+  name             String
+  address          String
+  city             String
+  state            String?
+  pincode          String?
+  latitude         Float
+  longitude        Float
+  contactPhone     String
+  emergencyContact String
+  isVerified       Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+
+  staff            User[]            @relation("HospitalStaff")
+  doctors          Doctor[]
+  appointments     Appointment[]
+  bloodInventory   BloodInventory[]
+  diagnosticTests  DiagnosticTest[]
+  bedAvailability  BedAvailability[]
+  medicineInventory MedicineInventory[]
+  sentReferrals    Referral[]        @relation("SentReferrals")
+  receivedReferrals Referral[]       @relation("ReceivedReferrals")
+  insuranceLinks   HospitalInsurance[]
+  patientHistory   PatientHistory[]
+  ambulanceRequests AmbulanceRequest[]
+
+  @@index([city])
+}
+
+model Doctor {
+  id               String        @id @default(uuid())
+  userId           String        @unique
+  hospitalId       String
+  specialty        String
+  qualification    String
+  experienceYears  Int           @default(0)
+  consultationFee  Float         @default(0.0)
+  scheduleJson     String?       // JSON string
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospital         Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  appointments     Appointment[]
+  patientHistory   PatientHistory[]
+
+  @@index([hospitalId])
+  @@index([specialty])
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  patientId   String
+  doctorId    String
+  hospitalId  String
+  slotTime    DateTime
+  status      String            @default("BOOKED") // BOOKED, CONFIRMED, COMPLETED, CANCELLED, REFERRED
+  notes       String?
+  source      String            @default("WEB") // WEB, WHATSAPP
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient     User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  hospital    Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([hospitalId])
+}
+
+model BloodInventory {
+  id             String     @id @default(uuid())
+  hospitalId     String
+  bloodGroup     String     // A_POS, A_NEG, B_POS, B_NEG, AB_POS, AB_NEG, O_POS, O_NEG
+  unitsAvailable Int        @default(0)
+  updatedAt      DateTime   @updatedAt
+
+  hospital       Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, bloodGroup])
+  @@index([bloodGroup])
+}
+
+model DiagnosticTest {
+  id              String   @id @default(uuid())
+  hospitalId      String
+  testName        String
+  category        String
+  price           Float
+  turnaroundHours Int      @default(24)
+  sampleType      String?
+  prerequisites   String?
+  available       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  hospital        Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([testName])
+}
+
+model AmbulanceRequest {
+  id              String           @id @default(uuid())
+  patientId       String?
+  patientName     String
+  patientPhone    String
+  pickupLatitude  Float
+  pickupLongitude Float
+  pickupAddress   String
+  hospitalId      String?
+  urgencyLevel    String           @default("CRITICAL") // HIGH, CRITICAL
+  status          String           @default("REQUESTED") // REQUESTED, DISPATCHED, EN_ROUTE, COMPLETED, CANCELLED
+  notes           String?
+  dispatchedAt    DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  patient         User?            @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  hospital        Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model BedAvailability {
+  id           String   @id @default(uuid())
+  hospitalId   String
+  wardType     String   // GENERAL, ICU, HDU, NICU, PEDIATRIC, EMERGENCY
+  totalBeds    Int      @default(0)
+  occupiedBeds Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  hospital     Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, wardType])
+  @@index([hospitalId])
+}
+
+model MedicineInventory {
+  id               String   @id @default(uuid())
+  hospitalId       String
+  medicineName     String
+  genericName      String
+  dosageForm       String
+  strength         String
+  stockQty         Int      @default(0)
+  price            Float    @default(0.0)
+  alternativesJson String?  // JSON string
+  updatedAt        DateTime @updatedAt
+
+  hospital         Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([medicineName])
+}
+
+model Referral {
+  id                 String         @id @default(uuid())
+  patientId          String
+  fromHospitalId     String
+  toHospitalId       String
+  reason             String
+  recordSnapshotJson String?        // JSON string
+  status             String         @default("PENDING") // PENDING, ACCEPTED, COMPLETED, REJECTED
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  patient            User           @relation("PatientReferrals", fields: [patientId], references: [id], onDelete: Cascade)
+  fromHospital       Hospital       @relation("SentReferrals", fields: [fromHospitalId], references: [id], onDelete: Cascade)
+  toHospital         Hospital       @relation("ReceivedReferrals", fields: [toHospitalId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model InsuranceProvider {
+  id             String              @id @default(uuid())
+  name           String              @unique
+  code           String              @unique
+  contactPhone   String?
+  claimPortalUrl String?
+  createdAt      DateTime            @default(now())
+
+  hospitals      HospitalInsurance[]
+}
+
+model HospitalInsurance {
+  id                  String            @id @default(uuid())
+  hospitalId          String
+  insuranceProviderId String
+  isCashless          Boolean           @default(true)
+  coverageDetails     String?
+
+  hospital            Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  insuranceProvider   InsuranceProvider @relation(fields: [insuranceProviderId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, insuranceProviderId])
+}
+
+model PatientHistory {
+  id            String     @id @default(uuid())
+  patientId     String
+  hospitalId    String?
+  doctorId      String?
+  recordType    String     // CONSULTATION, LAB_REPORT, PRESCRIPTION, DISCHARGE_SUMMARY, TRIAGE_SUMMARY
+  encryptedData String
+  metadataJson  String?    // JSON string
+  createdBy     String
+  createdAt     DateTime   @default(now())
+
+  patient       User       @relation("PatientRecords", fields: [patientId], references: [id], onDelete: Cascade)
+  creator       User       @relation("CreatedRecords", fields: [createdBy], references: [id], onDelete: Cascade)
+  hospital      Hospital?  @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  doctor        Doctor?    @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String?
+  userAgent  String?
+  details    String?  // JSON string
+  timestamp  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Reminder {
+  id          String          @id @default(uuid())
+  patientId   String
+  type        String          // APPOINTMENT, MEDICATION, LAB_RESULT, FOLLOW_UP
+  title       String
+  message     String
+  scheduledAt DateTime
+  status      String          @default("PENDING") // PENDING, SENT, FAILED
+  channel     String          @default("IN_APP") // WHATSAPP, IN_APP
+  createdAt   DateTime        @default(now())
+
+  patient     User            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model WhatsAppSession {
+  id               String   @id @default(uuid())
+  phoneNumber      String   @unique
+  currentState     String   @default("IDLE")
+  contextDataJson  String?  // JSON string
+  lastActive       DateTime @default(now())
+
+  @@index([phoneNumber])
+}
+
+model MonikaConversation {
+  id             String    @id @default(uuid())
+  userId         String?
+  sessionId      String    @unique
+  messagesJson   String    @default("[]")
+  lastTriageTier String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+}

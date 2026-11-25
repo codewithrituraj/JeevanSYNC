@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #059669;
+  --color-deep-green: #14532d;
+  --color-emergency-start: #c8372d;
+  --color-emergency-end: #9f1d2e;
+  --color-navy: #0f172a;
+  --color-slate: #64748b;
+  --color-page: #f8fafc;
+  --radius-card: 20px;
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased font-sans min-h-screen selection:bg-emerald-500 selection:text-white;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, input, select, textarea { min-height: 44px; }
+  :focus-visible { outline: 3px solid rgba(5, 150, 105, 0.45); outline-offset: 2px; }
+}
+
+@layer components {
+  .page-header-card { @apply bg-white border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+  .page-icon { @apply w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0; }
+  .page-icon-emerald { @apply bg-emerald-100 text-emerald-700; }
+  .page-icon-blue { @apply bg-blue-100 text-blue-700; }
+  .page-icon-red { @apply bg-red-100 text-red-700; }
+  .page-icon-purple { @apply bg-violet-100 text-violet-700; }
+  .page-title { @apply text-xl sm:text-2xl font-black text-slate-900 tracking-tight; }
+  .page-description { @apply text-xs sm:text-sm text-slate-500 mt-1; }
+  .status-chip { @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold; }
+  .status-success { @apply bg-emerald-100 text-emerald-800; }
+  .status-warning { @apply bg-amber-100 text-amber-800; }
+  .status-danger { @apply bg-red-100 text-red-800; }
+  .status-neutral { @apply bg-slate-100 text-slate-700; }
+  .progress-track { @apply h-2 w-full overflow-hidden rounded-full bg-slate-100; }
+  .progress-fill { @apply h-full rounded-full transition-all; }
+  .progress-success { @apply bg-emerald-500; }
+  .progress-warning { @apply bg-amber-500; }
+  .progress-danger { @apply bg-red-500; }
+  .empty-panel { @apply rounded-2xl border border-slate-200 bg-white p-8 text-center; box-shadow: var(--shadow-card); }
+  .button-secondary { @apply rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50; }
+}
+
+/* Custom pulsing emergency glow */
+@keyframes pulse-emergency {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+.pulse-emergency {
+  animation: pulse-emergency 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+/* Smooth mobile scrolling */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for tabs on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
